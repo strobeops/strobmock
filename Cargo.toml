@@ -1,0 +1,12 @@
+[package]
+name = "strobmock"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+tokio = { version = "1.53.1", features = ["full"] }
+bytes = "1.12.1"
+axum = "0.8.9"
+clap = { version = "4.6.6", features = ["derive"] }
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
