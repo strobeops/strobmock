@@ -21,10 +21,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
     let addr: std::net::SocketAddr = format!("{}:{}", args.host, args.port).parse()?;
 
-    tracing::info!("Starting strobmock on http://{addr}");
-
     let listener = tokio::net::TcpListener::bind(addr).await?;
     let app = Router::new();
+
+    tracing::info!("Listening on http://{addr}");
+
     axum::serve(listener, app).await?;
 
     Ok(())
