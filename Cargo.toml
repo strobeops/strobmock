@@ -2,6 +2,7 @@
 name = "strobmock"
 version = "0.1.0"
 edition = "2024"
+repository = "https://github.com/strobeops/strobmock"
 
 [dependencies]
 tokio = { version = "1.53.1", features = ["full"] }
@@ -10,3 +11,19 @@ axum = "0.8.9"
 clap = { version = "4.6.6", features = ["derive"] }
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
+
+[profile.release]
+codegen-units = 1
+lto = "thin"
+opt-level = 3
+strip = true
+
+[workspace.metadata.release]
+# Custom prefix for your Git tags (default is empty or the version number)
+tag-prefix = ""
+# Automatically push to your remote repository after committing and tagging
+push = false
+# Skip publishing to crates.io (useful for private binaries/libraries)
+publish = false
+# Explicitly forces all workspace members to bump version together
+shared-version = true
