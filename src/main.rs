@@ -25,6 +25,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let app = Router::new();
 
     tracing::info!("Listening on http://{addr}");
+    eprintln!("strobmock server running on http://{addr}");
 
     axum::serve(listener, app).await?;
 
