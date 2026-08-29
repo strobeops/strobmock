@@ -623,7 +623,10 @@ dependencies = [
  "axum",
  "bytes",
  "clap",
+ "http",
+ "http-body-util",
  "tokio",
+ "tower",
  "tracing",
  "tracing-subscriber",
 ]
