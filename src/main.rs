@@ -10,7 +10,7 @@ struct Args {
     #[arg(short, long, default_value_t = 8080)]
     port: u16,
 
-    #[arg(short, long, default_value_t = String::from("0.0.0.0"))]
+    #[arg(short = 'b', long, default_value_t = String::from("0.0.0.0"))]
     host: String,
 }
 
