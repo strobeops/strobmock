@@ -9,6 +9,16 @@ HTTP echo server and dynamic byte generator for benchmarking [strobengine](https
 | POST | `/echo` | Mirrors request body back (zero-copy) |
 | GET | `/bytes/{size}` | Returns zero-filled buffer of `size` bytes (max 100 MB) |
 
+## Project Structure
+
+```
+src/
+  main.rs      # CLI entry point and server startup
+  lib.rs       # Router, handlers, and core logic
+tests/
+  http_tests.rs  # Integration tests (echo, bytes, error handling)
+```
+
 ## Dependencies
 
 | Crate | Version | Purpose |
@@ -72,6 +82,12 @@ cargo fmt --check
 cargo clippy --all-targets -- -D warnings
 cargo test
 ```
+
+Integration tests in `tests/http_tests.rs` cover:
+
+- `POST /echo` — body echoed back with 200 OK
+- `GET /bytes/1024` — returns 1024 bytes with `application/octet-stream`
+- `GET /bytes/104857601` — returns 400 Bad Request (exceeds 100 MB limit)
 
 ## Contributing
 
