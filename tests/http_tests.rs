@@ -68,3 +68,19 @@ async fn test_bytes_endpoint_exceeds_limit() {
 
     assert_eq!(response.status(), StatusCode::BAD_REQUEST);
 }
+
+#[tokio::test]
+async fn test_sse_endpoint() {
+    let response = app()
+        .oneshot(Request::builder().uri("/sse").body(Body::empty()).unwrap())
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::OK);
+    assert!(
+        response.headers()["content-type"]
+            .to_str()
+            .unwrap()
+            .contains("text/event-stream")
+    );
+}
