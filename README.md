@@ -8,6 +8,7 @@ HTTP echo server and dynamic byte generator for benchmarking [strobengine](https
 |--------|------|-------------|
 | POST | `/echo` | Mirrors request body back (zero-copy) |
 | GET | `/bytes/{size}` | Returns zero-filled buffer of `size` bytes (max 100 MB) |
+| GET | `/sse` | Streams "ping" events every 100ms (SSE) |
 
 ## Project Structure
 
