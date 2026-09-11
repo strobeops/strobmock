@@ -12,6 +12,8 @@ clap = { version = "4.6.6", features = ["derive"] }
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 tokio-stream = "0.1.17"
+tracing-appender = "0.2.5"
+tower-http = { version = "0.7.1", features = ["trace"] }
 
 [dev-dependencies]
 tower = { version = "0.5.3", features = ["util"] }
