@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -e
+
+echo "Running pre-commit checks for Rust..."
+
+# Check code formatting
+echo "Checking cargo fmt..."
+cargo fmt --check
+
+# Check lints & static analysis
+echo "Checking cargo clippy..."
+cargo clippy --all-targets -- -D warnings
+
+# Run all unit & integration tests
+echo "Running cargo test..."
+cargo test --quiet
+
+echo "All Rust checks passed cleanly!"
