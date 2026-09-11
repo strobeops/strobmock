@@ -55,9 +55,12 @@ cargo install strobmock
 strobmock [OPTIONS]
 
 Options:
-  -p, --port <PORT>      Port to listen on [default: 8080]
-  -b, --host <HOST>      Host address to bind to [default: 0.0.0.0]
-  -h, --help             Print help
+  -p, --port <PORT>          Port to listen on [default: 8080]
+  -b, --host <HOST>          Host address to bind to [default: 0.0.0.0]
+  -v, --verbose              Increase logging verbosity (-v for DEBUG, -vv for TRACE)
+  -q, --quiet                Quiet mode (only WARN and ERROR logs)
+      --log-file <LOG_FILE>  Optional file path to append logs to
+  -h, --help                 Print help
 ```
 
 ### Examples
