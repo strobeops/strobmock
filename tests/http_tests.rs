@@ -91,6 +91,25 @@ async fn test_health_endpoint() {
 }
 
 #[tokio::test]
+async fn test_ws_endpoint_upgrade() {
+    let response = app()
+        .oneshot(
+            Request::builder()
+                .uri("/ws")
+                .header(http::header::CONNECTION, "Upgrade")
+                .header(http::header::UPGRADE, "websocket")
+                .header(http::header::SEC_WEBSOCKET_VERSION, "13")
+                .header(http::header::SEC_WEBSOCKET_KEY, "dGhlIHNhbXBsZSBub25jZQ==")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::UPGRADE_REQUIRED);
+}
+
+#[tokio::test]
 async fn test_sse_endpoint() {
     let response = app()
         .oneshot(Request::builder().uri("/sse").body(Body::empty()).unwrap())
