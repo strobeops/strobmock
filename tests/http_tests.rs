@@ -70,6 +70,27 @@ async fn test_bytes_endpoint_exceeds_limit() {
 }
 
 #[tokio::test]
+async fn test_health_endpoint() {
+    let response = app()
+        .oneshot(
+            Request::builder()
+                .uri("/health")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let body = BodyExt::collect(response.into_body())
+        .await
+        .unwrap()
+        .to_bytes();
+    assert_eq!(body.as_ref(), br#"{"status":"ok"}"#);
+}
+
+#[tokio::test]
 async fn test_sse_endpoint() {
     let response = app()
         .oneshot(Request::builder().uri("/sse").body(Body::empty()).unwrap())

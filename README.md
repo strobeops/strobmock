@@ -6,6 +6,7 @@ HTTP echo server and dynamic byte generator for benchmarking [strobengine](https
 
 | Method | Path | Description |
 |--------|------|-------------|
+| GET | `/health` | Baseline control target (`{"status": "ok"}`) |
 | POST | `/echo` | Mirrors request body back (zero-copy) |
 | GET | `/bytes/{size}` | Returns zero-filled buffer of `size` bytes (max 100 MB) |
 | GET | `/sse` | Streams "ping" events every 100ms (SSE) |

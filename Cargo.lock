@@ -658,6 +658,7 @@ dependencies = [
  "clap",
  "http",
  "http-body-util",
+ "serde_json",
  "tokio",
  "tokio-stream",
  "tower",

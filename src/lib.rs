@@ -1,11 +1,15 @@
 use axum::{
-    Router,
+    Json, Router,
     body::Bytes,
     extract::Path,
     http::StatusCode,
-    response::sse::{Event, KeepAlive, Sse},
-    routing::get,
+    response::{
+        IntoResponse,
+        sse::{Event, KeepAlive, Sse},
+    },
+    routing::{any, get},
 };
+use serde_json::json;
 use std::{convert::Infallible, time::Duration};
 use tokio_stream::StreamExt;
 use tower_http::trace::TraceLayer;
@@ -14,10 +18,15 @@ const MAX_SIZE: usize = 104_857_600; // 100 MB
 
 pub fn app() -> Router {
     Router::new()
-        .route("/echo", axum::routing::post(http_echo))
+        .route("/health", get(health_handler))
+        .route("/echo", any(http_echo))
         .route("/bytes/{size}", get(http_bytes))
         .route("/sse", get(sse_handler))
         .layer(TraceLayer::new_for_http())
+}
+
+async fn health_handler() -> impl IntoResponse {
+    (StatusCode::OK, Json(json!({ "status": "ok" })))
 }
 
 async fn http_echo(body: Bytes) -> Bytes {
