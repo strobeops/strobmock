@@ -8,6 +8,7 @@ use axum::{
 };
 use std::{convert::Infallible, time::Duration};
 use tokio_stream::StreamExt;
+use tower_http::trace::TraceLayer;
 
 const MAX_SIZE: usize = 104_857_600; // 100 MB
 
@@ -16,6 +17,7 @@ pub fn app() -> Router {
         .route("/echo", axum::routing::post(http_echo))
         .route("/bytes/{size}", get(http_bytes))
         .route("/sse", get(sse_handler))
+        .layer(TraceLayer::new_for_http())
 }
 
 async fn http_echo(body: Bytes) -> Bytes {
