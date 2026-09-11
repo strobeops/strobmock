@@ -1,7 +1,10 @@
 use axum::{
     Json, Router,
     body::Bytes,
-    extract::Path,
+    extract::{
+        Path,
+        ws::{Message, WebSocket, WebSocketUpgrade},
+    },
     http::StatusCode,
     response::{
         IntoResponse,
@@ -22,6 +25,7 @@ pub fn app() -> Router {
         .route("/echo", any(http_echo))
         .route("/bytes/{size}", get(http_bytes))
         .route("/sse", get(sse_handler))
+        .route("/ws", get(ws_handler))
         .layer(TraceLayer::new_for_http())
 }
 
@@ -50,4 +54,45 @@ async fn sse_handler() -> Sse<impl tokio_stream::Stream<Item = Result<Event, Inf
     .map(|_| Ok(Event::default().event("message").data("ping")));
 
     Sse::new(stream).keep_alive(KeepAlive::default())
+}
+
+async fn ws_handler(ws: WebSocketUpgrade) -> impl IntoResponse {
+    ws.on_upgrade(handle_socket)
+}
+
+async fn handle_socket(mut socket: WebSocket) {
+    tracing::debug!("WebSocket connection established");
+
+    while let Some(msg_result) = socket.recv().await {
+        let msg = match msg_result {
+            Ok(msg) => msg,
+            Err(err) => {
+                tracing::debug!(error = %err, "WebSocket client disconnected");
+                break;
+            }
+        };
+
+        match msg {
+            Message::Text(text) => {
+                if socket.send(Message::Text(text)).await.is_err() {
+                    break;
+                }
+            }
+            Message::Binary(bytes) => {
+                if socket.send(Message::Binary(bytes)).await.is_err() {
+                    break;
+                }
+            }
+            Message::Ping(payload) => {
+                if socket.send(Message::Pong(payload)).await.is_err() {
+                    break;
+                }
+            }
+            Message::Close(_) => {
+                tracing::debug!("WebSocket close frame received");
+                break;
+            }
+            _ => {}
+        }
+    }
 }
