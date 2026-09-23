@@ -3,10 +3,7 @@ use std::path::PathBuf;
 use tracing_subscriber::{EnvFilter, Layer, fmt, layer::SubscriberExt, util::SubscriberInitExt};
 
 #[derive(Parser, Debug)]
-#[command(
-    name = "strobmock",
-    about = "HTTP echo & byte generator for benchmarking"
-)]
+#[command(name = "strobmock", about = "HTTP & gRPC mock server for benchmarking")]
 pub struct Args {
     #[arg(short, long, default_value_t = 8080)]
     pub port: u16,
@@ -25,6 +22,14 @@ pub struct Args {
     /// Optional file path to append logs to (e.g. ./strobmock.log)
     #[arg(long)]
     pub log_file: Option<PathBuf>,
+
+    /// Enable the gRPC EchoService benchmark target alongside HTTP
+    #[arg(long)]
+    pub grpc: bool,
+
+    /// gRPC listen port (used only when --grpc is set)
+    #[arg(long, default_value_t = 50051)]
+    pub grpc_port: u16,
 }
 
 fn init_tracing(args: &Args) -> Option<tracing_appender::non_blocking::WorkerGuard> {
@@ -69,18 +74,38 @@ fn init_tracing(args: &Args) -> Option<tracing_appender::non_blocking::WorkerGua
 }
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let args = Args::parse();
     let _guard = init_tracing(&args);
 
     let addr: std::net::SocketAddr = format!("{}:{}", args.host, args.port).parse()?;
     let listener = tokio::net::TcpListener::bind(addr).await?;
-    let app = strobmock::app();
+    let local = listener.local_addr()?;
 
-    tracing::info!("Listening on http://{addr}");
-    eprintln!("strobmock server running on http://{addr}");
+    let (http_rx, grpc_rx) = strobmock::shutdown::signal_pair();
+    let http_fut = axum::serve(listener, strobmock::app())
+        .with_graceful_shutdown(strobmock::shutdown::wait(http_rx));
 
-    axum::serve(listener, app).await?;
+    eprintln!("strobmock server running on http://{local}");
+
+    if args.grpc {
+        let grpc_addr: std::net::SocketAddr =
+            format!("{}:{}", args.host, args.grpc_port).parse()?;
+        let grpc_listener = tokio::net::TcpListener::bind(grpc_addr).await?;
+        let grpc_local = grpc_listener.local_addr()?;
+
+        tracing::info!("gRPC EchoService listening on {grpc_local}");
+        eprintln!("strobmock gRPC server running on {grpc_local}");
+
+        let grpc_fut = strobmock::grpc::serve(grpc_listener, strobmock::shutdown::wait(grpc_rx));
+
+        tokio::select! {
+            r = http_fut => r?,
+            r = grpc_fut => r?,
+        }
+    } else {
+        http_fut.await?;
+    }
 
     Ok(())
 }
