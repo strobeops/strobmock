@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package mock;
+
+message EchoRequest {
+  string message = 1;
+  bytes payload = 2;
+  uint32 repeat = 3;
+}
+
+message EchoResponse {
+  string message = 1;
+  bytes payload = 2;
+}
+
+// EchoService provides unary, server-streaming, and bidirectional-streaming
+// RPCs for benchmarking full-duplex gRPC frame throughput.
+service EchoService {
+  // Echo is a unary request/response call.
+  rpc Echo(EchoRequest) returns (EchoResponse);
+
+  // ServerStreamEcho streams `repeat` responses back from a single request.
+  rpc ServerStreamEcho(EchoRequest) returns (stream EchoResponse);
+
+  // BidiEcho mirrors each streamed request back as a response.
+  rpc BidiEcho(stream EchoRequest) returns (stream EchoResponse);
+}
