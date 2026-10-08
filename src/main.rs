@@ -3,7 +3,10 @@ use std::path::PathBuf;
 use tracing_subscriber::{EnvFilter, Layer, fmt, layer::SubscriberExt, util::SubscriberInitExt};
 
 #[derive(Parser, Debug)]
-#[command(name = "strobmock", about = "HTTP & gRPC mock server for benchmarking")]
+#[command(
+    name = "strobmock",
+    about = "HTTP, gRPC & HTTP/3 mock server for benchmarking"
+)]
 pub struct Args {
     #[arg(short, long, default_value_t = 8080)]
     pub port: u16,
@@ -30,6 +33,14 @@ pub struct Args {
     /// gRPC listen port (used only when --grpc is set)
     #[arg(long, default_value_t = 50051)]
     pub grpc_port: u16,
+
+    /// Enable the HTTP/3 (QUIC) benchmark target alongside HTTP
+    #[arg(long)]
+    pub h3: bool,
+
+    /// HTTP/3 listen port over UDP (used only when --h3 is set)
+    #[arg(long = "h3-port", default_value_t = 8443)]
+    pub h3_port: u16,
 }
 
 fn init_tracing(args: &Args) -> Option<tracing_appender::non_blocking::WorkerGuard> {
@@ -79,14 +90,25 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let _guard = init_tracing(&args);
 
     let addr: std::net::SocketAddr = format!("{}:{}", args.host, args.port).parse()?;
+    let server_count = 1 + usize::from(args.grpc) + usize::from(args.h3);
+    let mut signals = strobmock::shutdown::signals(server_count);
+
     let listener = tokio::net::TcpListener::bind(addr).await?;
     let local = listener.local_addr()?;
-
-    let (http_rx, grpc_rx) = strobmock::shutdown::signal_pair();
+    let http_rx = signals.pop().ok_or("missing shutdown signal")?;
     let http_fut = axum::serve(listener, strobmock::app())
         .with_graceful_shutdown(strobmock::shutdown::wait(http_rx));
 
     eprintln!("strobmock server running on http://{local}");
+
+    // Bind every endpoint up front so configuration errors fail fast,
+    // then serve them as tasks under the shared shutdown signal.
+    let mut servers = tokio::task::JoinSet::new();
+    servers.spawn(async move {
+        http_fut
+            .await
+            .map_err(|err| Box::new(err) as Box<dyn std::error::Error + Send + Sync>)
+    });
 
     if args.grpc {
         let grpc_addr: std::net::SocketAddr =
@@ -97,14 +119,41 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         tracing::info!("gRPC EchoService listening on {grpc_local}");
         eprintln!("strobmock gRPC server running on {grpc_local}");
 
+        let grpc_rx = signals.pop().ok_or("missing shutdown signal")?;
         let grpc_fut = strobmock::grpc::serve(grpc_listener, strobmock::shutdown::wait(grpc_rx));
+        servers.spawn(grpc_fut);
+    }
 
-        tokio::select! {
-            r = http_fut => r?,
-            r = grpc_fut => r?,
+    if args.h3 {
+        let h3_addr: std::net::SocketAddr = format!("{}:{}", args.host, args.h3_port).parse()?;
+        let (cert, key) = strobmock::http3::ephemeral_cert(&args.host)?;
+        let h3_config = strobmock::http3::server_config(cert, key)?;
+        let h3_endpoint = quinn::Endpoint::server(h3_config, h3_addr)?;
+        let h3_local = h3_endpoint.local_addr()?;
+
+        tracing::info!("HTTP/3 server listening on https://{h3_local} (UDP)");
+        eprintln!("strobmock HTTP/3 server running on https://{h3_local} (UDP)");
+
+        let h3_rx = signals.pop().ok_or("missing shutdown signal")?;
+        let h3_fut = strobmock::http3::serve(h3_endpoint, strobmock::shutdown::wait(h3_rx));
+        servers.spawn(h3_fut);
+    }
+
+    let mut first_error: Option<Box<dyn std::error::Error + Send + Sync>> = None;
+    while let Some(joined) = servers.join_next().await {
+        let result = match joined {
+            Ok(result) => result,
+            Err(join_err) => Err(join_err.into()),
+        };
+        if let Err(err) = result
+            && first_error.is_none()
+        {
+            first_error = Some(err);
         }
-    } else {
-        http_fut.await?;
+    }
+
+    if let Some(err) = first_error {
+        return Err(err);
     }
 
     Ok(())

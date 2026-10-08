@@ -18,6 +18,7 @@ use tokio_stream::StreamExt;
 use tower_http::trace::TraceLayer;
 
 pub mod grpc;
+pub mod http3;
 pub mod shutdown;
 
 const MAX_SIZE: usize = 104_857_600; // 100 MB
