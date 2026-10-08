@@ -19,6 +19,19 @@ tonic = "0.14.6"
 tonic-prost = "0.14.6"
 prost = "0.14.4"
 tonic-reflection = "0.14.6"
+quinn = "0.11"
+h3 = "0.0.8"
+h3-quinn = "0.0.10"
+rcgen = "0.14"
+http = "1.5.0"
+# ring-only to stay aligned with quinn's rustls-ring feature;
+# defaults (aws-lc-rs) would install two crypto providers and panic at runtime
+rustls = { version = "0.23", default-features = false, features = [
+    "ring",
+    "logging",
+    "std",
+    "tls12",
+] }
 
 [build-dependencies]
 tonic-prost-build = "0.14.6"
@@ -27,7 +40,6 @@ protobuf-src = "2.1"
 [dev-dependencies]
 tower = { version = "0.5.3", features = ["util"] }
 http-body-util = "0.1.5"
-http = "1.5.0"
 
 [profile.release]
 codegen-units = 1
