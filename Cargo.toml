@@ -5,25 +5,25 @@ edition = "2024"
 repository = "https://github.com/strobeops/strobmock"
 
 [dependencies]
-tokio = { version = "1.53.1", features = ["full"] }
-bytes = "1.12.1"
-axum = { version = "0.8.9", features = ["ws"] }
-clap = { version = "4.6.6", features = ["derive"] }
-tracing = "0.1.44"
-tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
-tokio-stream = "0.1.17"
-tracing-appender = "0.2.5"
-tower-http = { version = "0.7.1", features = ["trace"] }
-serde_json = "1.0.151"
-tonic = "0.14.6"
-tonic-prost = "0.14.6"
-prost = "0.14.4"
-tonic-reflection = "0.14.6"
+tokio = { version = "1.53", features = ["full"] }
+bytes = "1.12"
+axum = { version = "0.8", features = ["ws"] }
+clap = { version = "4.6", features = ["derive"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tokio-stream = "0.1"
+tracing-appender = "0.2"
+tower-http = { version = "0.7", features = ["trace"] }
+serde_json = "1.0"
+tonic = "0.14"
+tonic-prost = "0.14"
+prost = "0.14"
+tonic-reflection = "0.14"
 quinn = "0.11"
 h3 = "0.0.8"
 h3-quinn = "0.0.10"
 rcgen = "0.14"
-http = "1.5.0"
+http = "1.5"
 # ring-only to stay aligned with quinn's rustls-ring feature;
 # defaults (aws-lc-rs) would install two crypto providers and panic at runtime
 rustls = { version = "0.23", default-features = false, features = [
@@ -34,12 +34,12 @@ rustls = { version = "0.23", default-features = false, features = [
 ] }
 
 [build-dependencies]
-tonic-prost-build = "0.14.6"
+tonic-prost-build = "0.14"
 protobuf-src = "2.1"
 
 [dev-dependencies]
-tower = { version = "0.5.3", features = ["util"] }
-http-body-util = "0.1.5"
+tower = { version = "0.5", features = ["util"] }
+http-body-util = "0.1"
 
 [profile.release]
 codegen-units = 1
